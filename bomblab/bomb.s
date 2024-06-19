@@ -550,44 +550,44 @@ Disassembly of section .text:
   40116a:	48 39 f0             	cmp    %rsi,%rax
   40116d:	75 f1                	jne    401160 <phase_6+0x6c>
   
-  40116f:	be 00 00 00 00       	mov    $0x0,%esi // rsi置零
+  40116f:	be 00 00 00 00       	mov    $0x0,%esi                    // rsi置零
   401174:	eb 21                	jmp    401197 <phase_6+0xa3>
 
-  401176:	48 8b 52 08          	mov    0x8(%rdx),%rdx // rdx = M[rdx+8]
-  40117a:	83 c0 01             	add    $0x1,%eax // eax+=1
-  40117d:	39 c8                	cmp    %ecx,%eax // ecx=当前读到的数
+  401176:	48 8b 52 08          	mov    0x8(%rdx),%rdx               // rdx = M[rdx+8]
+  40117a:	83 c0 01             	add    $0x1,%eax                    // eax+=1
+  40117d:	39 c8                	cmp    %ecx,%eax                    // ecx=当前读到的数
   40117f:	75 f5                	jne    401176 <phase_6+0x82>
-  401181:	eb 05                	jmp    401188 <phase_6+0x94> // ecx=eax
-  401183:	ba d0 32 60 00       	mov    $0x6032d0,%edx // edx=0x6032d0
-  401188:	48 89 54 74 20       	mov    %rdx,0x20(%rsp,%rsi,2) // M[rsp+2*rsi+32]=rdx
+  401181:	eb 05                	jmp    401188 <phase_6+0x94>        // ecx=eax
+  401183:	ba d0 32 60 00       	mov    $0x6032d0,%edx               // edx=0x6032d0
+  401188:	48 89 54 74 20       	mov    %rdx,0x20(%rsp,%rsi,2)       // M[rsp+2*rsi+32]=rdx
   40118d:	48 83 c6 04          	add    $0x4,%rsi
   401191:	48 83 fe 18          	cmp    $0x18,%rsi
-  401195:	74 14                	je     4011ab <phase_6+0xb7> // 读完6个数字
+  401195:	74 14                	je     4011ab <phase_6+0xb7>        // 读完6个数字
 
-  401197:	8b 0c 34             	mov    (%rsp,%rsi,1),%ecx // 读取ecx为第rsi个字符(已对7求补)
-  40119a:	83 f9 01             	cmp    $0x1,%ecx //如果是1则跳转
+  401197:	8b 0c 34             	mov    (%rsp,%rsi,1),%ecx           // 读取ecx为第rsi个字符(已对7求补)
+  40119a:	83 f9 01             	cmp    $0x1,%ecx                    //如果是1则跳转
   40119d:	7e e4                	jle    401183 <phase_6+0x8f>
-  40119f:	b8 01 00 00 00       	mov    $0x1,%eax // eax=1
-  4011a4:	ba d0 32 60 00       	mov    $0x6032d0,%edx // rdx=0x6032d0
+  40119f:	b8 01 00 00 00       	mov    $0x1,%eax                    // eax=1
+  4011a4:	ba d0 32 60 00       	mov    $0x6032d0,%edx               // rdx=0x6032d0
   4011a9:	eb cb                	jmp    401176 <phase_6+0x82>
 
-  4011ab:	48 8b 5c 24 20       	mov    0x20(%rsp),%rbx // rbx = M[rsp+32], 第一个node的指针
-  4011b0:	48 8d 44 24 28       	lea    0x28(%rsp),%rax // rax = rsp+32+8, 后一个node的指针的地址(降序)
-  4011b5:	48 8d 74 24 50       	lea    0x50(%rsp),%rsi // rsi = rsp+80, 最后一个node的指针的下一个地址
-  4011ba:	48 89 d9             	mov    %rbx,%rcx // rcx=第一个node的指针
-  4011bd:	48 8b 10             	mov    (%rax),%rdx // rdx=第二个node的指针
-  4011c0:	48 89 51 08          	mov    %rdx,0x8(%rcx) // 第一个node的nextnode指向第二个node
-  4011c4:	48 83 c0 08          	add    $0x8,%rax // rax后移
-  4011c8:	48 39 f0             	cmp    %rsi,%rax // rax是否是结尾
+  4011ab:	48 8b 5c 24 20       	mov    0x20(%rsp),%rbx              // rbx = M[rsp+32], 第一个node的指针
+  4011b0:	48 8d 44 24 28       	lea    0x28(%rsp),%rax              // rax = rsp+32+8, 后一个node的指针的地址(降序)
+  4011b5:	48 8d 74 24 50       	lea    0x50(%rsp),%rsi              // rsi = rsp+80, 最后一个node的指针的下一个地址
+  4011ba:	48 89 d9             	mov    %rbx,%rcx                    // rcx=第一个node的指针
+  4011bd:	48 8b 10             	mov    (%rax),%rdx                  // rdx=第二个node的指针
+  4011c0:	48 89 51 08          	mov    %rdx,0x8(%rcx)               // 第一个node的nextnode指向第二个node
+  4011c4:	48 83 c0 08          	add    $0x8,%rax                    // rax后移
+  4011c8:	48 39 f0             	cmp    %rsi,%rax                    // rax是否是结尾
   4011cb:	74 05                	je     4011d2 <phase_6+0xde>
-  4011cd:	48 89 d1             	mov    %rdx,%rcx //不是结尾, 第二个node的指针填入第一个node的指针
+  4011cd:	48 89 d1             	mov    %rdx,%rcx                    //不是结尾, 第二个node的指针填入第一个node的指针
   4011d0:	eb eb                	jmp    4011bd <phase_6+0xc9>
   4011d2:	48 c7 42 08 00 00 00 	movq   $0x0,0x8(%rdx)
   4011d9:	00 
-  4011da:	bd 05 00 00 00       	mov    $0x5,%ebp // 计数器
-  4011df:	48 8b 43 08          	mov    0x8(%rbx),%rax // rax=第一个node的nextnode
-  4011e3:	8b 00                	mov    (%rax),%eax // eax=下一个node的data
-  4011e5:	39 03                	cmp    %eax,(%rbx) // (%rbx)第一个node的data
+  4011da:	bd 05 00 00 00       	mov    $0x5,%ebp                    // 计数器
+  4011df:	48 8b 43 08          	mov    0x8(%rbx),%rax               // rax=第一个node的nextnode
+  4011e3:	8b 00                	mov    (%rax),%eax                  // eax=下一个node的data
+  4011e5:	39 03                	cmp    %eax,(%rbx)                  // (%rbx)第一个node的data
   4011e7:	7d 05                	jge    4011ee <phase_6+0xfa>
   4011e9:	e8 4c 02 00 00       	call   40143a <explode_bomb>
   4011ee:	48 8b 5b 08          	mov    0x8(%rbx),%rbx
