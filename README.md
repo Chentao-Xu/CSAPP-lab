@@ -8,3 +8,9 @@ Bomb lab
 - learn how to use a debugger like GDB
 - great fun
 - TODO: a hiden bomb
+
+Attack lab
+- code injection
+- return oriented programming
+- randomization
+- stack nonexecutable
