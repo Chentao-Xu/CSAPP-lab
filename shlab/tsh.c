@@ -146,7 +146,6 @@ int main(int argc, char **argv) {
     /* Evaluate the command line */
     eval(cmdline);
     fflush(stdout);
-    fflush(stdout);
   }
 
   exit(0); /* control never reaches here */
@@ -170,11 +169,11 @@ void eval(char *cmdline) {
 
   if (builtin_cmd(argv) == 0) { /* not a builtin command */
     pid = fork();
-    setpgid(0, 0);
     if (pid == 0) {
+      setpgid(0, 0);
       execv(argv[0], argv);
       printf("%s : Command not found\n", argv[0]);
-      exit(0);
+      exit(1);
     } else {
       if (!bg) {
         addjob(jobs, pid, FG, cmdline);
@@ -327,17 +326,18 @@ void sigchld_handler(int sig) {
   int status;
 
   while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) {
-    if (WIFSTOPPED(status)) {
-      struct job_t *job = getjobpid(jobs, pid);
-      job->state = ST;
-      printf("Job [%d] (%d) stopped by signal 20\n", job->jid, pid);
-      return;
+    if (WIFEXITED(status)) {
+      deletejob(jobs, pid);
     } else if (WIFSIGNALED(status)) {
       struct job_t *job = getjobpid(jobs, pid);
-      printf("Job [%d] (%d) terminated by signal 2\n", job->jid, pid);
+      printf("Job [%d] (%d) terminated by signal %d\n", job->jid, pid,
+             WTERMSIG(status));
       deletejob(jobs, pid);
-    } else {
-      deletejob(jobs, pid);
+    } else if (WIFSTOPPED(status)) {
+      struct job_t *job = getjobpid(jobs, pid);
+      job->state = ST;
+      printf("Job [%d] (%d) stopped by signal %d\n", job->jid, pid,
+             WSTOPSIG(status));
     }
   }
 
