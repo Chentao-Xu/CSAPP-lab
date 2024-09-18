@@ -1,3 +1,4 @@
+
 make[1]: Entering directory `/afs/cs.cmu.edu/project/ics/im/labs/shlab/src'
 ./sdriver.pl -t trace01.txt -s ./tsh -a "-p"
 #

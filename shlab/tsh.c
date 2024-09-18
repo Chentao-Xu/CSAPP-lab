@@ -3,6 +3,7 @@
  *
  * <Cedric Xu>
  */
+#include <bits/types/sigset_t.h>
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
@@ -11,6 +12,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 
 /* Misc manifest constants */
@@ -161,7 +163,31 @@ int main(int argc, char **argv) {
  * background children don't receive SIGINT (SIGTSTP) from the kernel
  * when we type ctrl-c (ctrl-z) at the keyboard.
  */
-void eval(char *cmdline) { return; }
+void eval(char *cmdline) {
+  char *argv[MAXARGS];
+  int bg = parseline(cmdline, argv);
+  pid_t pid;
+
+  if (builtin_cmd(argv) == 0) { /* not a builtin command */
+    pid = fork();
+    setpgid(0, 0);
+    if (pid == 0) {
+      execv(argv[0], argv);
+      printf("%s : Command not found\n", argv[0]);
+      exit(0);
+    } else {
+      if (!bg) {
+        addjob(jobs, pid, FG, cmdline);
+        waitfg(pid);
+      } else {
+        addjob(jobs, pid, BG, cmdline);
+        struct job_t *job = getjobpid(jobs, pid);
+        printf("[%d] (%d) %s", job->jid, pid, cmdline);
+      }
+    }
+  }
+  return;
+}
 
 /*
  * parseline - Parse the command line and build the argv array.
@@ -223,18 +249,67 @@ int parseline(const char *cmdline, char **argv) {
  */
 int builtin_cmd(char **argv) {
   char *cmd = argv[0];
+  if (strcmp(cmd, "quit") == 0) {
+    exit(0); /* execute it immediately */
+  } else if (strcmp(cmd, "fg") == 0 || strcmp(cmd, "bg") == 0) {
+    do_bgfg(argv);
+    return 1; /* is a builtin command */
+  } else if (strcmp(cmd, "jobs") == 0) {
+    listjobs(jobs);
+    return 1;
+  }
   return 0; /* not a builtin command */
 }
 
 /*
  * do_bgfg - Execute the builtin bg and fg commands
  */
-void do_bgfg(char **argv) { return; }
+void do_bgfg(char **argv) {
+  struct job_t *jobp = NULL;
+
+  if (argv[1] == NULL) {
+    printf("%s command requires PID or %%jobid argument\n", argv[0]);
+    return;
+  }
+
+  if (isdigit(argv[1][0])) {
+    pid_t pid = atoi(argv[1]);
+    if ((jobp = getjobpid(jobs, pid)) == 0) {
+      printf("(%d): No such process\n", pid);
+      return;
+    }
+  } else if (argv[1][0] == '%') {
+    int jid = atoi(&argv[1][1]);
+    if (!(jobp = getjobjid(jobs, jid))) {
+      printf("%s: No such job\n", argv[1]);
+      return;
+    }
+  } else {
+    printf("%s: argument must be a PID or %%jobid\n", argv[0]);
+    return;
+  }
+
+  if (strcmp(argv[0], "bg") == 0) {
+    jobp->state = BG;
+    kill(-jobp->pid, SIGCONT);
+    printf("[%d] (%d) %s", jobp->jid, jobp->pid, jobp->cmdline);
+  } else if (strcmp(argv[0], "fg") == 0) {
+    jobp->state = FG;
+    kill(-jobp->pid, SIGCONT);
+    waitfg(jobp->pid);
+  }
+  return;
+}
 
 /*
  * waitfg - Block until process pid is no longer the foreground process
  */
-void waitfg(pid_t pid) { return; }
+void waitfg(pid_t pid) {
+  while (pid == fgpid(jobs)) {
+    usleep(1000);
+  }
+  return;
+}
 
 /*****************
  * Signal handlers
@@ -247,21 +322,53 @@ void waitfg(pid_t pid) { return; }
  *     available zombie children, but doesn't wait for any other
  *     currently running children to terminate.
  */
-void sigchld_handler(int sig) { return; }
+void sigchld_handler(int sig) {
+  pid_t pid;
+  int status;
+
+  while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) {
+    if (WIFSTOPPED(status)) {
+      struct job_t *job = getjobpid(jobs, pid);
+      job->state = ST;
+      printf("Job [%d] (%d) stopped by signal 20\n", job->jid, pid);
+      return;
+    } else if (WIFSIGNALED(status)) {
+      struct job_t *job = getjobpid(jobs, pid);
+      printf("Job [%d] (%d) terminated by signal 2\n", job->jid, pid);
+      deletejob(jobs, pid);
+    } else {
+      deletejob(jobs, pid);
+    }
+  }
+
+  return;
+}
 
 /*
  * sigint_handler - The kernel sends a SIGINT to the shell whenver the
  *    user types ctrl-c at the keyboard.  Catch it and send it along
  *    to the foreground job.
  */
-void sigint_handler(int sig) { return; }
+void sigint_handler(int sig) {
+  pid_t pid = fgpid(jobs); /* 0 means no fg process found */
+  if (pid > 0) {
+    kill(-pid, sig);
+  }
+  return;
+}
 
 /*
  * sigtstp_handler - The kernel sends a SIGTSTP to the shell whenever
  *     the user types ctrl-z at the keyboard. Catch it and suspend the
  *     foreground job by sending it a SIGTSTP.
  */
-void sigtstp_handler(int sig) { return; }
+void sigtstp_handler(int sig) {
+  pid_t pid = fgpid(jobs); /* 0 means no fg process found */
+  if (pid > 0) {
+    kill(-pid, sig);
+  }
+  return;
+}
 
 /*********************
  * End signal handlers
