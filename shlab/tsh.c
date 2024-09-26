@@ -181,7 +181,7 @@ void eval(char *cmdline) {
       setpgid(0, 0);
       if (execve(argv[0], argv, environ) < 0) {
         printf("%s: Command not found\n", argv[0]);
-        exit(1);
+        _exit(1);
       }
     } else {
       if (!bg) {
