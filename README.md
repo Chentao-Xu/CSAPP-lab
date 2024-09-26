@@ -14,3 +14,8 @@ Attack lab
 - return oriented programming
 - randomization
 - stack nonexecutable
+
+Shell lab
+- builtin command
+- signal handler
+- jobs management
